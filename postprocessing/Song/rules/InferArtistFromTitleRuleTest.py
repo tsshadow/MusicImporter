@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from packaging.utils import _
 
 from postprocessing.Song.rules.InferArtistFromTitleRule import InferArtistFromTitleRule
-from postprocessing.constants import TITLE, ARTIST
+from postprocessing.constants import TITLE, ARTIST, ORIGINAL_TITLE
 
 
 class InferArtistFromTitleRuleTest(unittest.TestCase):
@@ -33,7 +33,8 @@ class InferArtistFromTitleRuleTest(unittest.TestCase):
     def _apply_rule(self, title):
         self.song.tag_collection.get_item_as_string.side_effect = lambda key: {
             ARTIST: "",
-            TITLE: title
+            TITLE: title,
+            ORIGINAL_TITLE: "",
         }[key]
 
         rule = InferArtistFromTitleRule(

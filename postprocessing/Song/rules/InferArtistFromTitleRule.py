@@ -3,7 +3,7 @@ from difflib import get_close_matches
 
 from postprocessing.Song.Helpers.FilterTableHelper import FilterTableHelper
 from postprocessing.Song.rules.TagRule import TagRule
-from postprocessing.constants import TITLE, ARTIST, ARTIST_REGEX_NON_CAPTURING
+from postprocessing.constants import TITLE, ARTIST, ARTIST_REGEX_NON_CAPTURING, ORIGINAL_TITLE
 
 def extract_artists_from_string(part: str) -> list[str]:
     return [a.strip() for a in re.split(ARTIST_REGEX_NON_CAPTURING, part) if a.strip()]
@@ -77,7 +77,24 @@ class InferArtistFromTitleRule(TagRule):
         ]
 
     def apply(self, song):
+        try:
+            original = song.tag_collection.get_item_as_string(ORIGINAL_TITLE)
+        except Exception:
+            original = ""
+
+        if not original:
+            try:
+                original = song.tag_collection.get_item_as_string(TITLE)
+            except Exception:
+                original = ""
+            if original:
+                song.tag_collection.set_item(ORIGINAL_TITLE, original)
+
         for rule in self.rules:
+            if original:
+                current = song.tag_collection.get_item_as_string(TITLE)
+                if current != original:
+                    song.tag_collection.set_item(TITLE, original)
             if rule.apply(song):
                 print(f"[InferArtistFromTitle] Applied rule: {rule.__class__.__name__} on '{song.path()}'")
                 return
