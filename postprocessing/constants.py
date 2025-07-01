@@ -21,6 +21,7 @@ PARSED: Final = "parsed"
 PUBLISHER: Final = "publisher"
 TITLE: Final = "title"
 TRACK_NUMBER: Final = "tracknumber"
+ORIGINAL_TITLE: Final = "original_title"
 
 MP3Tags = {
     ALBUM_ARTIST: "albumartist",
@@ -36,6 +37,7 @@ MP3Tags = {
     PUBLISHER: "publisher",
     REMIXER: "remixer",
     TITLE: "title",
+    ORIGINAL_TITLE: "original_title",
     TRACK_NUMBER: "tracknumber",
 }
 reversed_MP3Tags = {v: k for k, v in MP3Tags.items()}
@@ -53,6 +55,7 @@ FLACTags = {
     PUBLISHER: "PUBLISHER",
     REMIXER: "REMIXER",
     TITLE: "TITLE",
+    ORIGINAL_TITLE: "ORIGINAL_TITLE",
 }
 reversed_FLACTags = {v: k for k, v in FLACTags.items()}
 AACTags = {
@@ -81,6 +84,7 @@ MP4Tags = {
     GENRE: '\xa9gen',
     PUBLISHER: 'PUBL',
     REMIXER: "REMIXER",
+    ORIGINAL_TITLE: "ORIGINAL_TITLE",
 }
 reversed_MP4Tags = {v: k for k, v in MP4Tags.items()}
 
@@ -95,6 +99,7 @@ WAVTags = {
     TITLE: 'TIT2',
     FESTIVAL: "FESTIVAL",
     REMIXER: "REMIXER",
+    ORIGINAL_TITLE: "ORIGINAL_TITLE",
 }
 reversed_WAVTags = {v: k for k, v in WAVTags.items()}
 
