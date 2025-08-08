@@ -52,7 +52,7 @@ class JobManager:
     # -----------------------------------------------------
     # job execution
     # -----------------------------------------------------
-    async def run(self, job_id: str, steps: List[Any], selected_steps: List[str]) -> None:
+    async def run(self, job_id: str, steps: List[Any], selected_steps: List[str], **kwargs: Any) -> None:
         total = len(steps)
         state = {"status": "running", "current": None, "progress": 0, "total": total}
         self.jobs[job_id] = state
@@ -65,7 +65,7 @@ class JobManager:
 
             token = current_job_id.set(job_id)
             try:
-                await asyncio.to_thread(step.run, selected_steps)
+                await asyncio.to_thread(step.run, selected_steps, **kwargs)
             finally:
                 current_job_id.reset(token)
 
@@ -79,9 +79,9 @@ class JobManager:
         self.results[job_id] = state.copy()
         self.history.appendleft(job_id)
 
-    def create_job(self, steps: List[Any], selected_steps: List[str]) -> str:
+    def create_job(self, steps: List[Any], selected_steps: List[str], **kwargs: Any) -> str:
         job_id = str(uuid.uuid4())
-        asyncio.create_task(self.run(job_id, steps, selected_steps))
+        asyncio.create_task(self.run(job_id, steps, selected_steps, **kwargs))
         return job_id
 
     # -----------------------------------------------------

@@ -15,7 +15,7 @@ class YoutubeDownloader:
         if not self.output_folder or not self.archive_file or not self.executable:
             raise ValueError("Missing required environment variables for youtube_folder, youtube_archive, or ytdlp")
 
-    def download_account(self, name: str):
+    def download_account(self, name: str, break_on_existing: bool = True):
         link = f'http://www.youtube.com/{name}'
         command = [
             self.executable,
@@ -27,11 +27,12 @@ class YoutubeDownloader:
             '--no-overwrites',
             '--extract-audio',
             '--audio-format', 'm4a',
-            '-cookies-from-browser firefox'
+            '--cookies-from-browser', 'firefox',
             '--no-keep-video',
-           '--break-on-existing',
-            link
         ]
+        if break_on_existing:
+            command.append('--break-on-existing')
+        command.append(link)
 
         try:
             logging.info(f"Downloading from account: {name}")
@@ -51,7 +52,7 @@ class YoutubeDownloader:
             logging.error(f"Failed to fetch Youtube accounts from DB: {e}")
             return []
 
-    def run(self):
+    def run(self, break_on_existing: bool = True):
         try:
             accounts = self.get_accounts_from_db()
         except Exception as e:
@@ -63,4 +64,4 @@ class YoutubeDownloader:
             return
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            executor.map(self.download_account, accounts)
+            executor.map(lambda acc: self.download_account(acc, break_on_existing), accounts)

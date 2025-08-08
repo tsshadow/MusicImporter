@@ -12,10 +12,7 @@ from downloader.soundcloud import SoundcloudDownloader
 from downloader.telegram import TelegramDownloader
 from .run_tagger import run_tagger
 
-# instantiate processors and downloaders
-youtube_downloader = YoutubeDownloader()
-soundcloud_downloader = SoundcloudDownloader()
-telegram_downloader = TelegramDownloader()
+# instantiate processors (downloaders created on demand)
 extractor = Extractor()
 renamer = Renamer()
 mover = Mover()
@@ -25,6 +22,20 @@ flattener = EpsFlattener()
 analyze_step = Analyze()
 artist_fixer = ArtistFixer()
 
+
+def run_youtube_downloader(**kwargs):
+    break_on_existing = kwargs.get("break_on_existing", True)
+    YoutubeDownloader().run(break_on_existing=break_on_existing)
+
+
+def run_soundcloud_downloader(**kwargs):
+    break_on_existing = kwargs.get("break_on_existing", True)
+    SoundcloudDownloader(break_on_existing=break_on_existing).run(account="")
+
+
+def run_telegram_downloader(**kwargs):  # pragma: no cover - no options yet
+    TelegramDownloader().run("")
+
 steps_to_run = [
     Step("Extractor", ["import", "extract"], extractor.run),
     Step("Renamer", ["import", "rename"], renamer.run),
@@ -32,9 +43,9 @@ steps_to_run = [
     Step("Converter", ["convert"], converter.run),
     Step("Sanitizer", ["sanitize"], sanitizer.run),
     Step("Flattener", ["flatten"], flattener.run),
-    Step("YouTube Downloader", ["download", "download-youtube"], youtube_downloader.run),
-    Step("SoundCloud Downloader", ["download", "download-soundcloud"], lambda: soundcloud_downloader.run(account="")),
-    Step("Telegram Downloader", ["download-telegram"], lambda: telegram_downloader.run("")),
+    Step("YouTube Downloader", ["download", "download-youtube"], run_youtube_downloader),
+    Step("SoundCloud Downloader", ["download", "download-soundcloud"], run_soundcloud_downloader),
+    Step("Telegram Downloader", ["download-telegram"], run_telegram_downloader),
     Step("Analyze", ["analyze"], analyze_step.run),
     Step("ArtistFixer", ["artistfixer"], artist_fixer.run),
     Step(

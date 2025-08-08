@@ -19,6 +19,7 @@ Music Importer automates the following tasks:
      * 🎧 **YouTube**: channel/playlist-based music grabbing
      * 🎧 **SoundCloud**: artist/track-based downloading with throttle management
      * 📁 **Manual downloads**: handles ZIPs/RARs from sites like 1gabba
+   * Download steps accept an optional `breakOnExisting` flag to stop early when an item is already archived.
 
 2. **Unpack**
 
