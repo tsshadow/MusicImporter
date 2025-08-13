@@ -4,10 +4,17 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+        plugins: [tailwindcss(), sveltekit()],
   server: {
     host: true, // listen on all interfaces
-    allowedHosts: ['music-importer.teunschriks.nl']
+    allowedHosts: ['music-importer.teunschriks.nl'],
+    proxy: {
+      '/api': {
+        target: 'http://192.168.1.178:8001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
     // If you proxy/HMR through a remote URL, you may also need:
     // hmr: { host: 'music-importer.teunschriks.nl', protocol: 'wss', clientPort: 443 }
   },
