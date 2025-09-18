@@ -171,10 +171,18 @@ async def execute_step(
     args: Dict[str, Any],
 ):
     job = jobs[job_id]
-    step = step_map.get(step_name)
-    if not step:
+    step_factory = step_map.get(step_name)
+    if not step_factory:
         job["status"] = "error"
         job["log"] = job.get("log", []) + [f"Unknown step: {step_name}"]
+        await broadcast(job)
+        return
+
+    try:
+        step = step_factory()
+    except Exception as exc:
+        job["status"] = "error"
+        job["log"].append(f"Failed to initialize step '{step_name}': {exc}")
         await broadcast(job)
         return
 

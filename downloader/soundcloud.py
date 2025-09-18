@@ -39,10 +39,33 @@ class SoundcloudDownloader:
     - Handles batch downloads with configurable parallelism and throttling.
     - Skips tracks outside a configurable duration range.
     """
-    def __init__(self, break_on_existing = True, max_workers=1, burst_size=60, min_pause=1, max_pause=5):
+
+    def __init__(
+        self,
+        break_on_existing: bool = True,
+        max_workers: int = 1,
+        burst_size: int = 60,
+        min_pause: int = 1,
+        max_pause: int = 5,
+    ):
         self.output_folder = os.getenv("soundcloud_folder")
         self.archive_dir = os.getenv("soundcloud_archive")
         self.cookies_file = os.getenv("soundcloud_cookies", "soundcloud.com_cookies.txt")
+
+        self._break_on_existing = break_on_existing
+        self.max_workers = max_workers
+        self.burst_size = burst_size
+        self.min_pause = min_pause
+        self.max_pause = max_pause
+
+        self.enabled = False
+        self.archive_file: Path | None = None
+        self.ydl_opts: dict | None = None
+        self._is_setup = False
+
+    def setup(self) -> None:
+        if self._is_setup:
+            return
 
         if not self.output_folder or not self.archive_dir:
             logging.warning(
@@ -52,22 +75,17 @@ class SoundcloudDownloader:
             self.output_folder = None
             self.archive_dir = None
             self.enabled = False
+            self._is_setup = True
             return
 
         if not os.path.isdir(self.output_folder):
             raise FileNotFoundError(f"Output folder does not exist: {self.output_folder}")
 
         if os.path.isfile(self.archive_dir):
-            self.archive_file = self.archive_dir
+            self.archive_file = Path(self.archive_dir)
         else:
             os.makedirs(self.archive_dir, exist_ok=True)
             self.archive_file = None
-
-        self.enabled = True
-        self.max_workers = max_workers
-        self.burst_size = burst_size
-        self.min_pause = min_pause
-        self.max_pause = max_pause
 
         self.ydl_opts = {
             'http_headers': {
@@ -84,11 +102,14 @@ class SoundcloudDownloader:
             'format': 'bestaudio[ext=mp3]',
             'match_filter': self._match_filter,
             'quiet': False,
-            'break_on_existing': break_on_existing,
+            'break_on_existing': self._break_on_existing,
             'set_file_timestamp': True,
             'cookies': self.cookies_file,
             "ffmpeg_location": "/usr/local/bin",
         }
+
+        self.enabled = True
+        self._is_setup = True
 
     def _match_filter(self, info):
         duration = info.get("duration")
@@ -129,6 +150,8 @@ class SoundcloudDownloader:
         logging.error(f"SoundCloud download failed for {name} after 3 attempts.")
 
     def run(self, account="", download=True):
+        self.setup()
+
         if not getattr(self, "enabled", True):
             logging.warning("SoundCloud downloader is not configured; skipping run().")
             return
@@ -155,6 +178,8 @@ class SoundcloudDownloader:
                 futures = {}
                 for acc in batch:
                     # Clone ydl_opts and set archive file (shared or per-account)
+                    if self.ydl_opts is None:
+                        raise RuntimeError("SoundCloud downloader is not configured correctly")
                     ydl_opts = self.ydl_opts.copy()
                     if self.archive_file:
                         ydl_opts['download_archive'] = str(self.archive_file)

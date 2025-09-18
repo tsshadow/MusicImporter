@@ -6,21 +6,22 @@ from postprocessing.Song.BaseSong import BaseSong, ExtensionNotSupportedExceptio
 from postprocessing.analyzer import Analyzer
 from mutagen import MutagenError
 
+
+class _DummyAnalyzer:
+    def start(self):
+        pass
+
+    def submit(self, *args, **kwargs):
+        pass
+
+    def done(self):
+        pass
+
+
 class Analyze:
     def __init__(self):
         self.settings = Settings()
-        try:
-            self.analyzer = Analyzer()
-        except Exception as e:
-            logging.warning(f"Analyzer unavailable: {e}")
-            class _DummyAnalyzer:
-                def start(self):
-                    pass
-                def submit(self, *args, **kwargs):
-                    pass
-                def done(self):
-                    pass
-            self.analyzer = _DummyAnalyzer()
+        self.analyzer = None
         self.extensions = {
             "mp3": True,
             "flac": True,
@@ -28,8 +29,27 @@ class Analyze:
             "m4a": True,
             "aac": False,
         }
+        self._is_setup = False
+
+    def setup(self) -> None:
+        if self._is_setup:
+            return
+
+        try:
+            self.analyzer = Analyzer()
+        except Exception as e:
+            logging.warning(f"Analyzer unavailable: {e}")
+            self.analyzer = _DummyAnalyzer()
+
+        self._is_setup = True
 
     def run(self):
+        self.setup()
+
+        if self.analyzer is None:
+            logging.warning("Analyzer is not available; skipping run().")
+            return
+
         logging.info("Starting Analyze Step")
         self.analyzer.start()
         base = Path(self.settings.music_folder_path)

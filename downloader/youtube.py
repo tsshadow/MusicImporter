@@ -13,6 +13,15 @@ class YoutubeDownloader:
         self.output_folder = os.getenv("youtube_folder")
         self.archive_dir = os.getenv("youtube_archive")
 
+        # Read optional cookie/user-agent env once
+        self.cookies_file = os.getenv("YT_COOKIES")  # expected to be a path to cookies.txt
+        self.user_agent = os.getenv("YT_USER_AGENT")  # optional: keep UA aligned with browser
+        self._is_setup = False
+
+    def setup(self) -> None:
+        if self._is_setup:
+            return
+
         if not self.output_folder or not self.archive_dir:
             logging.warning(
                 "Missing required environment variables for youtube_folder or youtube_archive. "
@@ -20,13 +29,12 @@ class YoutubeDownloader:
             )
             self.output_folder = None
             self.archive_dir = None
-        else:
-            os.makedirs(self.output_folder, exist_ok=True)
-            os.makedirs(self.archive_dir, exist_ok=True)
+            self._is_setup = True
+            return
 
-        # Read optional cookie/user-agent env once
-        self.cookies_file = os.getenv("YT_COOKIES")  # expected to be a path to cookies.txt
-        self.user_agent = os.getenv("YT_USER_AGENT")  # optional: keep UA aligned with browser
+        os.makedirs(self.output_folder, exist_ok=True)
+        os.makedirs(self.archive_dir, exist_ok=True)
+        self._is_setup = True
 
     def _cookie_options(self) -> dict:
         """
@@ -52,6 +60,8 @@ class YoutubeDownloader:
         return opts
 
     def _create_ydl(self, archive_file: str, break_on_existing: bool = True) -> YoutubeDL:
+        self.setup()
+
         opts = {
             "outtmpl": f"{self.output_folder}/%(uploader)s/%(title)s.%(ext)s",
             "download_archive": archive_file,
@@ -81,6 +91,8 @@ class YoutubeDownloader:
         return ydl
 
     def download_account(self, name: str):
+        self.setup()
+
         link = f"http://www.youtube.com/{name}"
         archive_file = os.path.join(self.archive_dir, f"{name}.txt")
 
@@ -94,6 +106,8 @@ class YoutubeDownloader:
 
     def download_link(self, url: str, breakOnExisting: bool = True):
         """Download a single video using a direct URL."""
+        self.setup()
+
         archive_file = os.path.join(self.archive_dir, "manual.txt")
 
         try:
@@ -116,6 +130,8 @@ class YoutubeDownloader:
             return []
 
     def run(self):
+        self.setup()
+
         if not self.output_folder or not self.archive_dir:
             logging.warning("YouTube downloader is not configured; skipping run().")
             return
