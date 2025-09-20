@@ -3,7 +3,12 @@ import os
 from os import listdir
 from os.path import join, isfile
 import patoolib
+import patoolib.util as patool_util
 from data.settings import Settings
+
+patool_util.PATOOL_PATH.update({
+    "7z": "7zz"
+})
 
 
 class Extractor:

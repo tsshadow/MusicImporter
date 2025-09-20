@@ -1,4 +1,9 @@
 import logging
+import os
+import time
+
+from pymysql import err as pymysql_errors
+
 from postprocessing.Song.Helpers.DatabaseConnector import DatabaseConnector
 
 
@@ -18,6 +23,41 @@ REQUIRED_TABLES = [
     "label_genre",
     "subgenre_genre",
 ]
+
+
+MAX_ATTEMPTS = int(os.getenv("DB_INIT_MAX_RETRIES", "5"))
+RETRY_DELAY = float(os.getenv("DB_INIT_RETRY_DELAY", "1"))
+
+
+def _execute_with_retry(table: str, query: str) -> None:
+    attempts = 0
+    while attempts < max(1, MAX_ATTEMPTS):
+        try:
+            conn = DatabaseConnector().connect()
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(query)
+                conn.commit()
+                return
+            finally:
+                conn.close()
+        except (pymysql_errors.OperationalError, pymysql_errors.InterfaceError) as exc:
+            attempts += 1
+            logging.warning(
+                "Failed to ensure table '%s' exists (attempt %s/%s): %s",
+                table,
+                attempts,
+                max(1, MAX_ATTEMPTS),
+                exc,
+            )
+            if attempts >= max(1, MAX_ATTEMPTS):
+                break
+            time.sleep(RETRY_DELAY * attempts)
+        except Exception as exc:  # pragma: no cover - defensive
+            logging.warning("Failed to ensure table '%s' exists: %s", table, exc)
+            return
+
+    logging.warning("Giving up on ensuring table '%s' exists after %s attempts.", table, max(1, MAX_ATTEMPTS))
 
 
 def ensure_tables_exist() -> None:
@@ -126,17 +166,6 @@ def ensure_tables_exist() -> None:
         """,
     }
 
-    queries = [table_queries[table] for table in REQUIRED_TABLES]
-
-    try:
-        conn = DatabaseConnector().connect()
-        try:
-            with conn.cursor() as cursor:
-                for query in queries:
-                    print(query)
-                    cursor.execute(query)
-            conn.commit()
-        finally:
-            conn.close()
-    except Exception as exc:  # pragma: no cover - defensive
-        logging.warning("Failed to ensure DB tables exist: %s", exc)
+    for table in REQUIRED_TABLES:
+        query = table_queries[table]
+        _execute_with_retry(table, query)

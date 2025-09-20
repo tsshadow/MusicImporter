@@ -6,9 +6,10 @@
 FROM python:3.13-slim-trixie AS builder
 
 # Base tooling + Node + pnpm + build deps
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc wget curl gnupg bash git ca-certificates \
-    unzip p7zip-full \
+    unzip \
+    7zip \
     build-essential yasm nasm pkg-config \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
@@ -64,12 +65,8 @@ COPY --from=builder /usr/local /usr/local
 # Bring in application code and built frontend
 COPY --from=builder /app /app
 
-ARG PORT=8001
-ENV PORT=${PORT}
-EXPOSE ${PORT}
-
 # Ensure entrypoint is executable
 RUN chmod +x entrypoint.sh
 
-CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "${PORT}"]
+CMD ["bash", "./entrypoint.sh"]
 
