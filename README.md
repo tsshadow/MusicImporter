@@ -156,6 +156,21 @@ volumes:
 Use the `PORT` variable to run multiple instances side-by-side and override any other
 variables as needed for your setup.
 
+### Compose omgevingen
+
+Gebruik lokaal simpelweg `docker compose up` met `docker-compose.yml`. Die configuratie mount de
+hele projectmap (`.:/app`) zodat je codewijzigingen meteen actief zijn tijdens ontwikkeling.
+
+Voor productie combineer je de basisfile met `docker-compose.prod.yml`, die de brede bind mount
+verwijdert:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+Heb je runtime-configuratie nodig, mount dan enkel de gerichte map zoals
+`./config:/app/config:ro` binnen `docker-compose.prod.yml`.
+
 ## ⚙️ Configuration
 
 The application is configured through environment variables. Frequently used settings
