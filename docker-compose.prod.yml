@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  music-importer:
+    volumes: []
+    # Replace the empty list above with targeted mounts when runtime configuration is required, for example:
+    # volumes:
+    #   - ./config:/app/config:ro
+
